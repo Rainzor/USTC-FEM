@@ -1,0 +1,221 @@
+\documentclass{ctexart}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{subfigure}
+
+\usepackage{verbatim}
+\usepackage{fancyhdr}
+
+
+\usepackage{graphicx} % Required for inserting images
+\ctexset {
+     section/format    += \sffamily\raggedright,
+}
+
+\title{有限元方法 代码作业2 报告}
+\author{SA23001071 杨哲睿 }
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+编写程序求解两点边值问题
+\begin{equation}
+\begin{cases} 
+    -u'' = f, &\quad 0 < x < 1\\
+    u(0) = u(1) = 0
+\end{cases}\label{orig-problem}
+\end{equation}
+选取等距网格剖分，有限元空间选取分段线性多项式空间$V_h$。其中，选取了$f(x) = -(2 \cos x - (x - 1) \sin x)$，已知其解为$u(x) = (x-1) \sin x$。完成求解后，使用$L^2$范数和$H^1$范数计算误差并讨论结果。
+
+\section{Method}
+
+定义双线性型$a(u, v) = \int_0^1 u' v' \mathrm dx$，内积$(f, g) = \int_0 ^ 1 f \cdot g \mathrm dx$。那么问题 \eqref{orig-problem} 的变分问题是
+
+\textit{找 $u\in V = \{ v\in C[0, 1], v(0) = v(1) = 0\}$，使得$a(u, v) = (f, v), ~ \forall v \in V$都成立.}
+
+实验中采用等距网格划分，节点数为 $N$，节点处的值为$u_i$，$h = u_{i+1} - u_i$。选取基函数为 $\phi_i$，并选取其张成的有限维线性空间进行求解，全局基函数定义如下：
+\begin{equation}
+    \phi_i = \begin{cases}
+        \frac{x - x_{j-1}}{x_j - x_{j-1}} & x_{j-1} \le x < x_j\\
+        \frac{x_{j+1} - x}{x_{j+1} - x_{j}} & x_{j} \le x < x_{j+1}\\
+        0 & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+对于单元$[x_{i-1}, x_i]$局部基函数为：
+\begin{equation}
+    \phi_0^i (x) =\begin{cases}
+        \frac{x - x_{i-1}}{x_{i}- x_{i-1}}, & x_{i-1} \le x \le x_i\\
+        0, & \text{otherwise}
+    \end{cases}
+    \phi_1^i (x) =\begin{cases}
+        \frac{x_{i} - x}{x_{i}- x_{i-1}}, & x_{i-1} \le x \le x_i\\
+        0, & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+标准单元$[0, 1]$对应的形函数为：
+\begin{equation}
+    \phi_0 (x) = \begin{cases}
+        x, & 0 < x < 1\\
+        0, & \text{otherwise}
+    \end{cases}
+    \phi_1 (x) = \begin{cases}
+        1-x, & 0 < x < 1\\
+        0, & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+局部刚度矩阵的系数计算：
+\begin{equation}
+    \begin{aligned}
+        K_{0, 0} &= a(\phi_0^i, \phi_0^i) = \int_{x_{i-1}}^{x_i} \frac{1}{h^2} \mathrm dx = \frac{1}{h}\\
+        K_{1, 1} &= a(\phi_1^i, \phi_1^i) = \int_{x_{i-1}}^{x_i} \frac{1}{h^2} \mathrm dx = \frac{1}{h}\\
+        K_{0, 1} &= K_{1, 0} = a(\phi_0^i, \phi_1^i) = \int_{x_{i-1}}^{x_i} -\frac{1}{h^2} \mathrm dx = -\frac{1}{h}
+    \end{aligned}
+\end{equation}
+因此局部刚度矩阵为：
+\begin{equation}
+    K = \begin{pmatrix}
+        K_{0, 0} & K_{0, 1}\\
+        K_{1, 0} & K_{1, 1}
+    \end{pmatrix} = \frac{1}{h} \begin{pmatrix}
+        1 & -1\\ -1 & 1
+    \end{pmatrix}
+\end{equation}
+
+对于内部的单元 $[x_{i-1}, x_{i}]$，其对应到全局的矩阵为：
+\begin{equation}
+    K_i = \bordermatrix{
+    ~   & &  & i-1 & i \cr
+    ~   & 0 & \cdots & 0 & 0 & \cdots & 0\cr
+    ~   & \vdots & \ddots & \vdots & \vdots & \ddots & \vdots\cr
+    ~   & 0 & \cdots & 0 & 0 & \cdots & 0\cr
+    i-1 & 0 & \cdots & \frac{1}{h} & -\frac{1}{h}& \cdots & 0 \cr
+    i & 0 & \cdots & -\frac{1}{h} & \frac{1}{h}& \cdots & 0 \cr
+    ~   & 0 & \cdots & 0 & 0 & \cdots & 0\cr
+    ~   & \vdots & \ddots & \vdots & \vdots & \ddots & \vdots\cr
+    ~   & 0 & \cdots & 0 & 0 & \cdots & 0\cr}_{N \times N}
+\end{equation}
+
+对于边界上的 $[0, x_1]$：
+\begin{equation}
+    K_1 = \begin{pmatrix}
+        \frac{1}{h} & 0 & \cdots & 0\\
+        0 & 0 & \cdots & 0 \\
+        \vdots & \vdots & \ddots & \vdots \\
+        0 & 0 & \cdots & 0
+    \end{pmatrix}_{N \times N}
+\end{equation}
+对于$[x_N, 1]$：
+\begin{equation}
+    K_{N+1} = \begin{pmatrix}
+        0 & \cdots & 0& 0\\
+        \vdots & \ddots & \vdots & \vdots \\
+        0 & \cdots & 0& 0 \\
+        0 & \cdots & 0 & \frac{1}{h}
+    \end{pmatrix}_{N \times N}
+\end{equation}
+
+全局刚度矩阵：
+\begin{equation}
+    A = \sum_{i = 1} ^ {N+1} K_i 
+\end{equation}
+从而：
+\begin{equation}
+    A = \frac{1}{h}\begin{pmatrix}
+          2 & -1 &  \cdots &0 & 0 \\
+         -1 & 2  &  \cdots &0 & 0\\
+          0 & \vdots &  & \vdots &0 \\
+          0 & 0 & \cdots& 2 & -1\\
+          0 & 0 & \cdots& -1 & 2\\
+    \end{pmatrix}
+\end{equation}
+
+计算 $(f, \phi_j)$ 得：
+\begin{equation}
+\begin{aligned}
+    f_j &= \int_0 ^ 1 f \phi_j \mathrm dx\\
+    &= \frac{4 (h j-1) \sin ^2\left(h/2\right) \sin (h j)}{h}-2 \sin (h) \cos (h j)
+\end{aligned}
+\end{equation}
+
+因此为求解节点上的值,只需要求解出 $A U = F$，其中：
+\begin{equation}
+    U  = \begin{pmatrix}
+        u_1\\
+        \vdots\\
+        v_N
+    \end{pmatrix},
+    \quad
+    F = \begin{pmatrix}
+        f_1\\
+        \vdots\\
+        f_N
+    \end{pmatrix}
+\end{equation}
+
+在估计$L^2$和$H^1$误差进行时，先对于求出的$u_h$进行线性插值，然后再使用梯形公式来进行近似积分值，不存在较大的精度问题。
+
+\section{Results}
+
+实验得到的结果如下：
+\newpage
+
+\begin{table}[h!]
+\caption{\label{table.label} 误差分析表} \centering
+\bigskip
+\begin{small}
+\begin{tabular}{|c|cc|cc|}
+  \hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  n &$L^2 $ error & order &$ H^1$ error & order\\\hline
+10&   1.41E-03  &  --   &  4.90E-02 &  -- \\
+20&   3.86E-04  &  1.87 & 2.56E-02 &  0.93\\
+40&   1.01E-04  &  1.93 & 1.31E-02 &  0.96 \\
+80&   2.6E-05  &  1.95 & 6.62E-3 &  0.98\\\hline
+\end{tabular}
+\end{small}
+\end{table}
+
+观察到，该方法对 $L^2$ 误差具有二阶精度，对$H^1$误差具有一阶精度. 
+
+\section{Discussion}
+本节着重进行误差分析，令 $v \in V_h$ 为一分片线性函数，满足：
+\begin{equation}
+    v(x_i) = u(x_i)\quad \forall i = 1, 2, \cdots, N
+\end{equation}
+其中 $u$ 是两点边值问题的古典解。令 $e = v - u$,那么
+
+考虑区间 $[a,b]$ 上的$C^1$函数 $f$，满足$f(a) = f(b) = 0$，那么$|f| < \frac{b-a}{2} \max|f'|$，积分
+\begin{equation}
+    \int_a^b |f(x)| \mathrm d x < \frac{(b-a)^2}{2} \max | f'|
+\end{equation}
+
+对 $e, e'$ 反复利用该结论以及微分中值定理可知，对于 $e, e'$ 有如下的最大误差估计：
+\begin{equation}
+\begin{cases}
+    \sup _ x | e' | \le C_1 h \sup_x | u''|\\
+    \sup _ x | e | \le C_2 h ^ 2 \sup_x | u''|
+\end{cases}
+\end{equation}
+那么
+\begin{equation}
+\begin{cases}
+    || u - v||_2 = \le C_1 \cdot h^2 \sup_x|u'' |\\
+    || u' - v'||_2 = \le C_2 \cdot h \sup_x|u'' |\\
+\end{cases}
+\end{equation}
+
+代入$L^2$误差和$H$误差的表达式中可知，其在 $L^2$ 意义下有二阶精度，$H^1$意义下有一阶精度。
+
+\begin{flushleft}
+    这说明了，第一次作业存在问题。在排查之后，发现在$H^1$范数的计算上出现了明显的错误。
+\end{flushleft}
+
+
+\end{document}

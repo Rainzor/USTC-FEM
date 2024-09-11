@@ -1,0 +1,175 @@
+\documentclass[11pt]{ctexart}
+\title{FEM 书面作业 1}
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+\ctexset {
+     section/format    += \sffamily\raggedright,
+     subsection/format += \fbox,
+}
+
+
+\author{SA23001071 杨哲睿}
+\date{\today}
+\begin{document}
+
+\maketitle
+
+\section{习题 1}
+
+假设 $V = \{ w | w \in C [0, 1] $, $w'$ 是 $[0, 1]$ 中的分片连续有界函数, $w(0) = w(1) = 0\}$，$w \in C[0, 1]$ 满足 
+$$ \int _0 ^ 1w v \mathrm d x = 0,\quad \forall v \in V $$
+证明：
+$$ w(x) = 0, \quad \forall x \in [0, 1]$$
+
+{\flushleft \textbf{证明}：}
+
+假设 $\exists x_0\in (0, 1), w(x_0) > \alpha > 0$ 因为 $w$ 是连续函数，所以 $\exists B(x_0, r) \subset (0,1)$ 使得 $\forall x \in B(x_0, r)$ 有 $f(x) > \alpha$，这是因为连续函数值域中开集的原像是开集。
+
+考虑如下的函数：
+
+\begin{equation}
+  v = \begin{cases}
+    \frac{1}{r}(x- x_0 + r)^2, & x_0 - r \le x < x_0 - \frac{1}{2} r\\
+    - \frac{1}{r}(x - x_0) ^ 2 + \frac{r}{2}, & x_0 - \frac 1 2 r \le x < x_0 + \frac 1 2 r \\
+    \frac{1}{r}(x- x_0 - r)^2, & x_0 - r \le x < x_0 - \frac{1}{2} r\\
+    0, & \text{otherwise}
+  \end{cases}
+\end{equation}
+
+不难验证：
+\begin{equation}
+  v' = \begin{cases}
+    \frac{2}{r}(x-x_0+r),  & x_0 - r \le x < x_0 - \frac{1}{2} r\\
+    - \frac{2}{r}(x - x_0), & x_0 - \frac 1 2 r \le x < x_0 + \frac 1 2 r \\
+    \frac{2}{r}(x- x_0 - r), & x_0 - r \le x < x_0 - \frac{1}{2} r\\
+    0, & \text{otherwise}
+  \end{cases}
+\end{equation}
+是分片连续的函数，并且 $v(0) = v(1) = 1$，因此 $v \in V$。
+\begin{equation}
+  0 = \int_0 ^ 1 w v \mathrm dx > \alpha \int_{x_0 - r} ^ {x_0+r} v \mathrm dx > 0 
+\end{equation}
+产生矛盾。
+
+因此 $\forall x \in (0, 1), w(x) = 0$，由$w$的连续性可知，$w(0) = w(1) = 0$。综上：
+
+$$ w(x) = 0\quad \forall x \in [0, 1] $$
+
+\section{习题2}
+
+设$f(x)$是光滑函数，给出两点边值问题
+\begin{equation}
+  \begin{cases}
+    -u'' + u = f,& 0 < x < 1\\
+    u(0) = u(1) = 0
+  \end{cases}
+\end{equation}
+对应的变分问题。
+
+{\flushleft \textbf{解}：}
+
+定义双线性型 $a(u, v) := \int_0 ^ 1 u' v' \mathrm dx$.
+
+定义空间 $V = \left\{ v: v \in L^2(0, 1), a(v, v) < \infty, v(0) = v(1) = 0\right\}$.
+
+对应的变分问题为：求 $u \in V$，使得
+\begin{equation}
+  a(u,v) = (f, v)\quad \forall v \in V
+\end{equation}
+
+\section{习题3}
+
+
+设$f(x)$是光滑函数，给出两点边值问题
+\begin{equation}
+  \begin{cases}
+    -(a(x) u'(x)) + u (x)= f,& 0 < x < 1\\
+    u(0) = u'(1) = 0
+  \end{cases}
+\end{equation}
+对应的变分问题。
+
+{\flushleft \textbf{解}：}
+
+定义双线性型 $a(u, v) := \int_0 ^ 1 a u' v'+ uv \mathrm dx$.
+
+定义空间 $V = \left\{ v: v \in L^2(0, 1), a(v, v) < \infty,v(0) = 0\right\}$.
+
+此时：
+\begin{equation}
+  \begin{aligned}
+    & \int_0^1 f v \mathrm dx\\
+   =&\int_0^1 - v(au')' + uv \mathrm dx\\
+   =&-(v(x)a(x)u'(x))|^1_0 + \int_0^1 au'v'\mathrm dx + \int_0^1 uv \mathrm dx\\
+   =&\int_0^1 au'v'\mathrm dx + \int_0^1 uv \mathrm dx\\
+   =& a(u,v)
+  \end{aligned}
+\end{equation}
+从而，对应的变分问题为：求 $u \in V$，使得
+\begin{equation}
+  a(u,v) = (f, v)\quad \forall v \in V
+\end{equation}
+
+
+
+\section{习题4}
+
+假设函数 $f$ 是分片线性的，$f(x) = \sum_{j = 1}^N f_j \phi_j(x)$，证明：求解边值问题的有限元方法可以写成如下形式：
+$$ A U = M F $$
+其中$M$是质量矩阵.
+
+{\flushleft \textbf{证明}：}假设求解的边值问题本身可以转化为一个变分问题，即存在双线性型$a(u,v)$、内积 $( \cdot, \cdot)$ 和空间$V$使方程求解问题的解等价于找 $u\in V$，使得$a(u,v) = (f, v) \forall v \in V$。
+
+取$V_h$是$V$的有限维子空间，$\{\psi_i\}_{i=1}^M$是$V_h$上的一组基。在子空间 $V_h$中，$u = \sum_{i=1}^M u_i \psi_i, v = \sum_{i = 1}^M v_i \psi_i$，那么双线性型：
+\begin{equation}
+\begin{aligned}
+  a(u, v) &= a(\sum_{i=1}^N u_i \psi_i(x), \sum_{j=1}^N v_j \psi_j(x))
+  &= \sum_{i=1}^N \sum_{j=1}^N u_i v_j a(\psi_i, \psi_j)
+\end{aligned}
+\end{equation}
+定义矩阵 $A\in \mathbb{R}^{M\times M}$，其中每个元素 $a_{ij} = a(\psi_i, \psi_j)$，向量$W = (v_1, v_2, \cdots, v_M)^T$，$U = (u_1, u_2, \cdots, u_M)^T$，那么
+\begin{equation}
+  a(u,v) = W^T A U
+\end{equation}
+
+同时\begin{equation}
+\begin{aligned}
+  (f, v) &= \left(\sum_{j=1}^N f_j \phi_j(x), \sum_{i=1}^M v_i \psi_i(x)\right)\\
+  &= \sum_{j=1}^N\sum_{i=1}^M (\phi_j(x), \psi_i(x))
+\end{aligned}
+\end{equation}
+
+令 $F = (f_1, f_2, \cdots, f_N)^T$，矩阵 $M\in \mathbb{R}^{M \times N}$，其中每个元素为 $m_{ij} = (\phi_j(x), \psi_i(x))$，那么：
+\begin{equation}
+  (f,v) = W^T M F
+\end{equation}
+
+此时，变分问题转化为 $W^T A U = W^T M F,\forall W$，那么
+\begin{equation}
+  AU = MF\label{result}
+\end{equation}
+这说明了求解边值问题的有限元方法能够写成\eqref{result}的形式.
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

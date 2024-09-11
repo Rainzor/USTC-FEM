@@ -1,0 +1,163 @@
+\documentclass[11pt]{ctexart}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{FEM 第二次 书面作业}
+\author{杨哲睿 SA23001071}
+
+\begin{document}
+\maketitle
+\section{习题1}
+证明如下命题：假设$f$充分光滑，那么
+\begin{equation}
+  (f, \phi_i) = \frac{1}{2} (h_i + h_{i+1}) (f(x_i) + O(h))
+\end{equation}
+其中 $h = \max h_i$
+
+{\flushleft \textbf{证明}：} 因为$f$充分光滑，所以存在在 $x_i$ 处的Taylor展开式如下：
+\begin{equation}
+  f(x_i + s) = f(x_i) + f'(x_i) s + O(s^2) = f(x_i) + O(s)
+\end{equation}
+因此：
+\begin{equation}
+  \begin{aligned}
+    (f, \phi_i) & = \int_0^1 f(x) \phi_i(s) \mathrm ds\\
+     & = \int_{-h_i}^{h_{i+1}} f(x_i + s) \phi(x_i + s) \mathrm ds \\
+     & = \int_{-h_i}^{h_{i+1}} f(x_i) \phi(x_i + s) + \phi_i(x_i + s) O(h) \mathrm ds
+  \end{aligned}
+\end{equation}
+因为 $h = \max_i h_i$，所以积分式中 $| s | < h$：
+\begin{equation}
+  \begin{aligned}
+    (f, \phi_i) & = \frac{1}{2}(h_i+h_{i+1}) (f(x_i) + 2 O(h))\\
+    & = \frac{1}{2}(h_i+h_{i+1}) (f(x_i) + O(h))
+  \end{aligned}
+\end{equation}
+
+\begin{flushright}
+$\square$
+\end{flushright}
+
+\section{习题2}
+
+设 $h = \max_{1 \le i \le n} (x_i - x_{i-1})$，证明
+\begin{equation}
+  \| u - u_I \| \le C h^2 \| u''\|
+\end{equation}
+
+提示：利用$w(0) = 0$说明：
+\begin{equation}
+  \int_0^1 w(x)^2 \mathrm dx \le \bar{c} \int_0^1 w'(x)^2 \mathrm dx 
+\end{equation}
+以及在$w(0) = w(1) = 0$的前提下，寻找尽量小的$\bar{c}$。
+
+\begin{flushleft}
+\textbf{证明}：
+\end{flushleft}
+
+首先考虑提示的内容，先考虑$w(0) =0$的情况：
+\begin{equation}
+  \begin{aligned}
+    w(t) &=\int_0^t w'(x)\mathrm dx \\
+    &= \int_0^t 1 \cdot w'(x)\mathrm dx \\
+    \text{(By Cauchy Inequality)}&\le \left( \int_0^t 1^2 \mathrm dx \right)^{1/2}
+    \left( \int_0^t w'(x)^2 \mathrm d x\right)^{1/2}\\
+  \end{aligned}
+\end{equation}
+因此
+\begin{equation}
+  w(t)^2 \le t \int_0^t w'(x)^2\mathrm dx
+\end{equation}
+因此：
+\begin{equation}
+  \begin{aligned}
+    \int_0^1 w(x)^2 \mathrm dx &\le \int_0^1 \left(t \int_0^t w'(x)^2\mathrm dx\right) \mathrm dt\\
+    &\le \| t \|_1 \| \int_0^t w'(x)^2\mathrm dx\|_\infty\\
+    &= \frac{1}{2} \int_0^1 w'(x)^2\mathrm dx
+  \end{aligned}
+\end{equation}
+那么，在$w(0) = 0$的情况下，该不等式成立，且$\bar c = \frac{1}{2}$
+
+$w(0) = w(1) = 0$ 的情况，类似的有：
+\begin{equation}
+  \begin{aligned}
+    w(t) &=  \int_1^t w'(x)\mathrm dx \\
+    &\le \left( \int_t^1 1^2 \mathrm dx \right)^{1/2}
+    \left( \int_t^1 w'(x)^2 \mathrm d x\right)^{1/2}\\
+  \end{aligned}
+\end{equation}
+因此
+\begin{equation}
+  w(t)^2 \le (1-t) \int_t^1 w'(x)^2\mathrm dx
+\end{equation}
+那么：
+\begin{equation}
+  \int_t^1 w^2 \mathrm dx\le \frac{1}{2}(1-t)^2 \int_t^1 w'(x)^2 \mathrm dx
+\end{equation}
+
+那么
+\begin{equation}
+  \begin{aligned}
+    2\int_0^1 w(x)^2 \mathrm dx& = 
+            \int_0^{\alpha} w(x)^2 \mathrm dx + 
+            \int_{\alpha}^1 w(x)^2 \mathrm dx\\
+    &\le 
+        \alpha^2\int_0^{\alpha} w'(x)^2\mathrm dx 
+        + (1-\alpha)^2\int_{\alpha}^{1} w'(x)^2\mathrm dx
+  \end{aligned}
+\end{equation}
+
+
+令$F = \int_0^{\alpha} w'(x)^2\mathrm dx$，$M = \int_0^{1} w'(x)^2\mathrm dx$，那么：
+\begin{equation}
+  2\int_0^1 w(x)^2 \mathrm dx \le \alpha^2 F + (1 - \alpha)^2 (M-F)
+\end{equation}
+右侧函数取最大值时，$\alpha = \frac{1}{2}$，$F = M /2$，这说明：
+\begin{equation}
+  2\int_0^1 w(x)^2 \mathrm dx \le M/4 = \frac{1}{4}\int_0^1 w'(x)^2\mathrm dx
+\end{equation}
+这说明在$w(0) = w(1) = 0$的情况下，$\bar c = \frac{1}{8}$
+
+下面证明原本的定理。令$e(x) = u(x) - u_I(x)$，考察 $[x_{i-1}, x_{i+1}]$，满足：
+\begin{equation}
+  e(x_{i-1}) = e(x_i) = e(x_{i+1})
+\end{equation}
+这说明，存在$\xi_{i-1}, \xi_{i}$使得$e'(\xi_{i-1})=e'(\xi_{i}) = 0$
+
+利用证明的引理：
+\begin{equation}
+  \begin{aligned}
+    \int_{\xi_{i-1}}^{\xi_i} e'(x)^2 \mathrm dx &\le \frac{1}{4} (\xi_{i}-\xi_{i-1})\int_{\xi_{i-1}}^{\xi_i} e''(x)^2 \mathrm dx\\
+    &\le h\int_{\xi_{i-1}}^{\xi_i} e''(x)^2 \mathrm dx
+  \end{aligned}
+\end{equation}
+那么，对于$e$有：
+\begin{equation}
+  \begin{aligned}
+    \int_{\xi_{i-1}}^{\xi_i} e(x)^2 \mathrm dx &\le \frac{1}{8} h^2\int_{\xi_{i-1}}^{\xi_i} e'(x)^2 \mathrm dx
+  \end{aligned}
+\end{equation}
+与此同时，可以对$e, e'$也建立不等式：
+\begin{equation}
+  \int_{x_{i-1}}^{x_i} e(x)^2 \mathrm dx \le \frac{1}{8} h^2\int_{x_{i-1}}^{x_i} e'(x)^2 \mathrm dx
+\end{equation}
+
+对 $i$ 求和：
+\begin{equation}
+  \begin{aligned}
+    \int_0^1 e(x)^2 \mathrm dx &\le (\frac{1}{8}h^2) 
+    \sum_{i=1}^N\int_{x_{i-1}}^{x_i} e'(x)^2\mathrm dx\\
+    &\le(\frac{1}{8}h^2) \sum_{i=1}^N(\frac{1}{8}h^2) \int_{\xi_{i-1}}^{\xi_i} e''(x)^2\mathrm dx
+  \end{aligned}
+\end{equation}
+考虑到 $u_I'' = 0$ 立刻得到：
+\begin{equation}
+  \| u - u_I \| \le\frac{1}{8}  h^2 \| u'' \|
+\end{equation}
+
+\begin{flushright}
+  $\square$
+\end{flushright}
+
+\end{document}

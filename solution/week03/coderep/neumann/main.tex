@@ -1,0 +1,193 @@
+\documentclass{ctexart}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[]{hyperref}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+\title{FEM - 第三周作业2 Neumann 边值问题}
+\author{SA23001071 杨哲睿}
+\ctexset{
+  section/format    += \sffamily\raggedright,
+}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+编写程序求解两点边值问题:
+\begin{equation}
+  \begin{cases}
+    - u'' = f & 0 < x < 1\\
+    u'(0) = u'(1) = 0
+  \end{cases}
+\end{equation}
+选取等距网格剖分，有限元空间选取分段线性多项式空间 $V_h$，选取准确解 $u(x) = x^2(x-1)^2$ 算出满足方程的$f(x)$。
+
+\section{Method}
+
+定义线性空间：$V \times \mathbf{R}= H^1([0,1]) \times \mathbb{R}$，定义双线性型：
+$$ a((u, c), (v, d)) = \int_0^1 u'(x) v'(x) \mathrm dx + c \int_0^1 v \mathrm dx + d\int_0^1 u \mathrm dx $$
+定义内积：
+$$ (f, v) = \int_0^1 f(x) v(x) \mathrm dx $$
+
+变分问题为：找 $(u, c) \in V$，使得 $\forall (v, d) \in V$
+\begin{equation}
+  a((u, c), (v, d)) = (f, v)
+\end{equation}
+
+有限维空间：$V_h \times \mathbb{R}$ 其中 $V_h={u: u \in C^0, \text{在每个区间上为分段线性多项式}}$。
+
+实验中采用等距网格划分，节点数为 $N+1$，$0 = x_0 < x_1 < \dots < x_n = 1$，节点处的值为$u_i$，$h = u_{i+1} - u_i$。选取基函数为 $\phi_i$，并选取其张成的有限维线性空间进行求解，全局基函数定义如下：
+\begin{equation}
+  \phi_0 = \begin{cases}
+    \frac{x_{1} - x}{x_{j+1}} & 0 \le x \le x_{1}\\
+    0 & \text{otherwise}
+  \end{cases}
+  \quad
+  \phi_i = \begin{cases}
+      \frac{x - x_{j-1}}{x_j - x_{j-1}} & x_{j-1} \le x < x_j\\
+      \frac{x_{j+1} - x}{x_{j+1} - x_{j}} & x_{j} \le x < x_{j+1}\\
+      0 & \text{otherwise}
+  \end{cases}
+  \quad
+  \phi_n = \begin{cases}
+    \frac{x-x_{n-1}}{1-x_{n-1}} & x_{n-1} \le x \le 1\\
+    0 & \text{otherwise}
+  \end{cases}
+\end{equation}
+
+对于单元$[x_{i-1}, x_i]$局部基函数为：
+\begin{equation}
+    \phi_0^i (x) =\begin{cases}
+        \frac{x - x_{i-1}}{x_{i}- x_{i-1}}, & x_{i-1} \le x \le x_i\\
+        0, & \text{otherwise}
+    \end{cases}
+    \phi_1^i (x) =\begin{cases}
+        \frac{x_{i} - x}{x_{i}- x_{i-1}}, & x_{i-1} \le x \le x_i\\
+        0, & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+标准单元$[0, 1]$对应的形函数为：
+\begin{equation}
+    \phi_0 (x) = \begin{cases}
+        x, & 0 < x < 1\\
+        0, & \text{otherwise}
+    \end{cases}
+    \phi_1 (x) = \begin{cases}
+        1-x, & 0 < x < 1\\
+        0, & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+局部刚度矩阵的系数计算：
+\begin{equation}
+    \begin{aligned}
+        K_{0, 0} &= a(\phi_0^i, \phi_0^i) = \int_{x_{i-1}}^{x_i} \frac{1}{h^2} \mathrm dx = \frac{1}{h}\\
+        K_{1, 1} &= a(\phi_1^i, \phi_1^i) = \int_{x_{i-1}}^{x_i} \frac{1}{h^2} \mathrm dx = \frac{1}{h}\\
+        K_{0, 1} &= K_{1, 0} = a(\phi_0^i, \phi_1^i) = \int_{x_{i-1}}^{x_i} -\frac{1}{h^2} \mathrm dx = -\frac{1}{h}
+    \end{aligned}
+\end{equation}
+因此局部刚度矩阵为：
+\begin{equation}
+    K = \begin{pmatrix}
+        K_{0, 0} & K_{0, 1}\\
+        K_{1, 0} & K_{1, 1}
+    \end{pmatrix} = \frac{1}{h} \begin{pmatrix}
+        1 & -1\\ -1 & 1
+    \end{pmatrix}
+\end{equation}
+
+全局刚度矩阵：
+\begin{equation}
+    A = \sum_{i = 1} ^ {N+1} K_i 
+\end{equation}
+从而：
+\begin{equation}
+    A = \frac{1}{h}\begin{pmatrix}
+          1 & -1 &  \cdots &0 & 0 \\
+         -1 & 2  &  \cdots &0 & 0\\
+          0 & \vdots &  & \vdots &0 \\
+          0 & 0 & \cdots& 2 & -1\\
+          0 & 0 & \cdots& -1 & 1\\
+    \end{pmatrix}
+\end{equation}
+
+计算 $(f, \phi_j)$ 得：
+\begin{equation}
+\begin{aligned}
+    f_j &= \int_0 ^ 1 f \phi_j \mathrm dx = h(f(x_j) + O(h))
+\end{aligned}
+\end{equation}
+
+其次，计算如下的：
+\begin{equation}
+  d \int_0^1 v \mathrm dx = \sum_{i=0}^{N}dv(x_i)\int_{0}^1 \phi_i(x)\mathrm dx
+\end{equation}
+
+令 
+\begin{equation}
+  \mathbf{V} = \begin{pmatrix}
+    v(x_0)\\
+    v(x_1)\\
+    \vdots\\
+    v(x_N)\\
+    d
+  \end{pmatrix}
+  \mathbf{U} = \begin{pmatrix}
+    u(x_0)\\
+    u(x_1)\\
+    \vdots\\
+    u(x_N)\\
+    c
+  \end{pmatrix}
+  \mathbf{F} = \begin{pmatrix}
+    f_0\\
+    f_1\\
+    \vdots\\
+    f_N\\
+    0
+  \end{pmatrix}
+\end{equation}
+那么 $a((u, c), (v, d)) = (f, v)$可以写为：
+\begin{equation}
+  \mathbf{V}^T \mathbf{KU}=\mathbf{V}^T \begin{pmatrix}
+    A_{11} & \dots & A_{1N} & \int_0^1 \phi_1 \mathrm dx\\
+    \vdots & \ddots & \vdots & \vdots \\
+    A_{N1}& \dots & A_{NN} & \int_0^1 \phi_N \mathrm dx\\
+    \int \phi_1 \mathrm dx & \dots & \int_0^1 \phi_N \mathrm dx& 0
+  \end{pmatrix}
+  \mathbf{U} = \mathbf{V}^T\mathbf{F}
+\end{equation}
+
+因此，求解如下的线性方程组：
+\begin{equation}
+  \mathbf{KU}=\mathbf{F}
+\end{equation}
+
+\section{Results}
+
+实验选取 $u(x) = x^2(x-1)^2$，那么 $-u''(x) = -2 x (1 - 3 x + 2 x^2)$。对于求得的系数，先进行插值，然后进行梯形公式数值积分。求得的 $\int_0^1 u(x)\mathrm dx=0$，因此精确解应为 $x^2(x-1)^2-\frac{1}{30}$。
+\begin{table}[h!]
+  \caption{\label{table.label} 误差分析} \centering
+  \bigskip
+  \begin{small}
+  \begin{tabular}{|c|cc|cc|}
+    \hline
+    % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+    n &$L^2 $ error & order &$ H^1$ error & order\\\hline
+    10 & 3.402e-03 & --- & 1.021e-01 & --- \\
+    20 & 8.557e-04 & 1.99 & 5.092e-02 & 1.004\\
+    40 & 2.142e-04 & 1.99 & 2.518e-02 & 1.016 \\
+    80 & 5.359e-05 & 1.99 & 1.229e-02 & 1.034\\\hline
+  \end{tabular}
+  \end{small}
+\end{table}
+可以看出，该方法对$L^2$误差为2阶，对$H^1$误差为一阶。其理由与前两次实验相同。
+
+
+\section*{Reference}
+
+\href[]{https://fenicsproject.org/olddocs/dolfin/1.6.0/python/demo/documented/neumann-poisson/python/documentation.html}{FEniCS -- 11. Poisson equation with pure Neumann boundary conditions}
+
+\end{document}
