@@ -45,5 +45,5 @@ function [x, u_h] = fem_solver(N,F_load)
     u_h = K \ F;
 
     % Apply boundary conditions u(0) = 0 and u(1) = 0
-    u_h = [0; u_h; 0];
+    u_h = [0, u_h', 0];
 end
