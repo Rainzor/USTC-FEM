@@ -30,10 +30,10 @@ for i = 1:length(Ns)
     L2_diff_error = sqrt(L2_error^2 + L2_diff_error);
     
     % Print the error
-%    fprintf('L2 norm error with N=%d: %e\n', N, L2_error);
-%    fprintf('LH1 norm error with N=%d: %e\n', N, L2_diff_error);
-%    L2_error_list(i) = L2_error;
-%    L2_diff_error_list(i) = L2_diff_error;
+   fprintf('L2 norm error with N=%d: %e\n', N, L2_error);
+   fprintf('LH1 norm error with N=%d: %e\n', N, L2_diff_error);
+   L2_error_list(i) = L2_error;
+   L2_diff_error_list(i) = L2_diff_error;
 %
 %    % Create a new figure for each N
 %    figure;
