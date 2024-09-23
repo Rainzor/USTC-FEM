@@ -1,0 +1,230 @@
+\documentclass[11pt]{ctexart}
+% \documentclass{article}
+\textheight 23.5cm \textwidth 15.8cm
+%\leftskip -1cm
+\topmargin -1.5cm \oddsidemargin 0.3cm \evensidemargin -0.3cm
+
+\usepackage{verbatim}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{
+  language=Matlab,                % 设定语言为MATLAB
+  frame=single,                   % 外围框架
+  basicstyle=\footnotesize\ttfamily,   % 基本代码风格
+  keywordstyle=\color{blue},      % 关键词风格
+  commentstyle=\color{mygreen},   % 注释风格
+  stringstyle=\color{mymauve},    % 字符串风格
+  numbers=left,                   % 行号位置
+  numberstyle=\tiny\color{mygray}, % 行号风格
+  stepnumber=1,                   % 行号步长
+  numbersep=5pt,                  % 行号与代码间隔
+  backgroundcolor=\color{white},  % 代码背景色
+  showspaces=false,               % 不显示空格
+  showstringspaces=false,         % 不显示字符串中的空格
+  showtabs=false,                 % 不显示制表符
+  tabsize=4,                      % 制表符宽度
+  captionpos=b,                   % 标题位置
+  breaklines=true,                % 自动换行
+  breakatwhitespace=false,        % 仅在空格处换行
+  escapeinside={\%*}{*)},         % 可以添加LaTeX内容
+}
+
+
+\ctexset {
+     section/format    += \sffamily\raggedright,
+     subsection/format += \fbox,
+}
+
+\title{FEM Code Report2}
+\author{SA24229016 王润泽}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+编写程序求解两点边值问题：
+\begin{equation}
+     \begin{aligned}
+          -u'' &= f, \quad 0 < x < 1, \\
+          u(0) &= u(1) = 0.
+     \end{aligned}
+\end{equation}
+选取等距网格剖分，有限元空间选取为分段连续线性多项式空间，每个单元的基函数利用单元$ I_j = [x_{j-1},x_j] $端点$x_{j-1}, x_j$得到。
+
+\section{Method}
+\subsection{基函数}
+实验中采用等距网格划分，节点数为 N，节点处的值为 $ u_i ,h_i = x_{i}-x_{i-1}$ 。选取分片线性全局基函数$ \phi_i(x) $，并选取其张成的有限维线性空间进行求解，其定义如下：
+\begin{equation}
+     \phi_i(x) = \left\{
+          \begin{aligned}
+               &\frac{x-x_{i-1}}{h_i}, \quad x \in I_{i}, \\
+               &\frac{x_i-x}{h_{i+1}}, \quad x \in I_{i+1}, \\
+               &0, \quad \text{otherwise}.
+          \end{aligned}
+     \right.
+\end{equation}
+
+对于单元 $ I_i = [x_{i-1},x_i] $，其局部基函数 $ \psi $ 定义如下：
+\begin{equation}
+     \psi^0_i(x) = \left\{
+          \begin{aligned}
+               &\frac{x_i-x}{h_i}, \quad x \in I_{i}, \\
+               &0, \quad \text{otherwise}.
+          \end{aligned}
+     \right.
+\end{equation}
+\begin{equation}
+     \psi^1_i(x) = \left\{
+          \begin{aligned}
+               &\frac{x-x_{i-1}}{h_i}, \quad x \in I_{i}, \\
+               &0, \quad \text{otherwise}.
+          \end{aligned}
+     \right.
+\end{equation}
+
+对于标准单元 $ I = [0,1] $，其基函数 $ {\varphi} $ 定义如下：
+\begin{equation}
+     {\varphi}^0(x) = \left\{
+          \begin{aligned}
+               &1-x, \quad x \in [0,1], \\
+               &0, \quad \text{otherwise}.
+          \end{aligned}
+     \right.
+\end{equation}
+\begin{equation}
+     {\varphi}^1(x) = \left\{
+          \begin{aligned}
+               &x, \quad x \in [0,1], \\
+               &0, \quad \text{otherwise}.
+          \end{aligned}
+     \right.
+\end{equation}
+
+\subsection{刚度矩阵}
+局部刚度矩阵描述了双线性形式 $ a(u,v) $ 在局部基函数上的表现，其定义如下：
+\begin{equation}
+     \begin{aligned}
+          k_{i}^{00}&= a(\psi_i^0,\psi_i^0) = \int_{I_i} \psi_i^0(x)' \psi_i^0(x)' = \frac{1}{h_i}, \\
+          k_{i}^{01}&= k_{i}^{10}= a(\psi_i^0,\psi_i^1) = \int_{I_i} \psi_i^0(x)' \psi_i^1(x)' = -\frac{1}{h_i}, \\
+          k_{i}^{11}&= a(\psi_i^1,\psi_i^1) = \int_{I_i} \psi_i^1(x)' \psi_i^1(x)' = \frac{1}{h_i}.
+     \end{aligned}
+\end{equation}
+
+对于等分剖分的单元，其刚度矩阵 $ K$ 定义如下：
+\begin{equation}
+     k_i = \frac{1}{h} \begin{pmatrix}
+          1 & -1 \\
+          -1 & 1
+     \end{pmatrix}.
+\end{equation}
+
+对于内部单元 $ I_i = [x_{i-1},x_i] $，其全局刚度矩阵 $ K_i $ 定义如下：
+\begin{equation}
+     K_i = \bordermatrix{
+          &       &        & {i-1}  & i      &        &       \cr
+          &0      & \cdots & 0      & 0      & \cdots & 0      \cr
+          &\vdots & \ddots & \vdots & \vdots & \ddots & \vdots \cr
+          &0      & \cdots & 0      & 0      & \cdots & 0      \cr
+          i-1&0      & \cdots & \frac{1}{h} & -\frac{1}{h} & \cdots & 0    \cr
+          i&0      & \cdots & -\frac{1}{h} & \frac{1}{h} & \cdots & 0  \cr
+          &0      & \cdots & 0      & 0      & \cdots & 0      \cr
+          &\vdots & \ddots & \vdots & \vdots & \ddots & \vdots \cr
+          &0      & \cdots & 0      & 0      & \cdots & 0      \cr
+     }
+\end{equation}
+对于边界上 $ I_1=[0,x_1] $ 和 $ I_N=[x_{N-1},1] $ 的单元，其全局刚度矩阵 $ K_1 $ 和 $ K_N $ 定义如下：
+\begin{equation}
+     K_1 = \frac{1}{h} \begin{pmatrix}
+          1 & 0& \cdots & 0 \\
+          0 & 0& \cdots & 0 \\
+          \vdots & \vdots & \ddots & \vdots \\
+          0 & 0 & \cdots & 0
+     \end{pmatrix}
+\end{equation}
+\begin{equation}
+     K_{N+1} = \frac{1}{h} \begin{pmatrix}
+          0 & 0& \cdots & 0 \\
+          0 & 0& \cdots & 0 \\
+          \vdots & \vdots & \ddots & \vdots \\
+          0 & 0 & \cdots & 1
+     \end{pmatrix}
+\end{equation}
+ 
+得到全局刚度矩阵 $ A $ 为：
+\begin{equation}
+     A = \sum_{i=1}^{N+1} K_i\
+\end{equation}
+
+\subsection{载荷向量}
+取 $ f(x) = -(2\cos{x}-(x-1)\sin(x)), u(x) = (x-1)\sin{x} $，得到载荷向量 $ F $ 分量为：
+\begin{equation}
+     \begin{aligned}
+          f_i &= (f, \phi_i) = \int_0^1 f \phi_i \, dx \\
+          &= 4(hj-1)\sin^2(h/2)sin(hj)/h-2\sin(h)\cos(hj)    
+     \end{aligned}
+\end{equation}
+
+\section{Results}
+实验得到的结果如下：
+\begin{table}[htbp]
+	\centering
+	\caption{误差分析}
+	  \begin{tabular}{|c|cc|cc|}
+	  \toprule
+	  N     & \multicolumn{1}{c}{$L^2$ error} & \multicolumn{1}{c|}{order} & \multicolumn{1}{c}{$H^1$ error} & \multicolumn{1}{c|}{order} \\
+	  \midrule
+	  10    & $1.70\times 10^{-3}$ &   -    & $5.39\times 10^{-2}$ & - \\
+	  20    & $4.26\times 10^{-4}$ & 2.00 & $2.69\times 10^{-2}$ & 1.00 \\
+	  40    & $1.07\times 10^{-4}$ & 2.00 & $1.34\times 10^{-2}$ & 1.00 \\
+	  80    & $2.66\times 10^{-5}$ & 2.00 & $6.68\times 10^{-3}$ & 1.01 \\
+	  \bottomrule
+	  \end{tabular}%
+	\label{tab:error}%
+  \end{table}%
+
+\section{Discussion}
+本次实验与实验1相比，主要要区别在于从不同的角度构造刚度矩阵，实验1是以全局基函数来构造刚度矩阵，而实验2是从每个单元的局部基函数出发构造刚度矩阵。从结果来看，二者的误差收敛结果是一致的，且误差随着网格的细化而减小，误差的收敛阶数也是符合理论预期的，即 $ L^2 $ 误差和 $ H^1 $ 误差的收敛阶数分别为 2 和 1。
+
+\appendix
+\section{Computer Code}
+\begin{lstlisting}[caption={FEM Solver}]
+     function [x, u_h] = fem_solver2(N,F_load)
+     % Mesh generation
+     a = 0; b = 1;  % Interval [0,1]
+     h = (b - a) / N;  % Step size
+     x = linspace(a, b, N+1);  % Mesh points
+     A = sparse(N-1,N-1);
+     % Construct the sparse matrix A
+     for i = 2:N-1
+         A(i-1,i-1) = A(i-1,i-1) + 1/h;
+         A(i-1,i) = A(i-1,i) - 1/h;
+         A(i,i-1) = A(i,i-1) - 1/h;
+         A(i,i) = A(i,i) + 1/h;
+     end
+     A(1,1) = A(1,1) + 1/h;
+     A(N-1,N-1) = A(N-1,N-1) + 1/h;
+     % Construct the load vector F
+     F = zeros(N-1, 1);
+     for j = 1:N-1
+         F(j) = F_load(j,h);
+     end
+     % Solve the linear system K * u_h = F
+     u_h = A \ F;
+     % Apply boundary conditions u(0) = 0 and u(1) = 0
+     u_h = [0, u_h', 0];
+ end 
+\end{lstlisting}
+\end{document}
