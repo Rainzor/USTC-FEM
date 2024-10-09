@@ -9,12 +9,44 @@
 \usepackage{graphicx}
 \usepackage{amssymb}
 \usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{
+  language=Matlab,                % 设定语言为MATLAB
+  frame=single,                   % 外围框架
+  basicstyle=\footnotesize\ttfamily,   % 基本代码风格
+  keywordstyle=\color{blue},      % 关键词风格
+  commentstyle=\color{mygreen},   % 注释风格
+  stringstyle=\color{mymauve},    % 字符串风格
+  numbers=left,                   % 行号位置
+  numberstyle=\tiny\color{mygray}, % 行号风格
+  stepnumber=1,                   % 行号步长
+  numbersep=5pt,                  % 行号与代码间隔
+  backgroundcolor=\color{white},  % 代码背景色
+  showspaces=false,               % 不显示空格
+  showstringspaces=false,         % 不显示字符串中的空格
+  showtabs=false,                 % 不显示制表符
+  tabsize=4,                      % 制表符宽度
+  captionpos=b,                   % 标题位置
+  breaklines=true,                % 自动换行
+  breakatwhitespace=false,        % 仅在空格处换行
+  escapeinside={\%*}{*)},         % 可以添加LaTeX内容
+}
+
 
 \ctexset {
      section/format    += \sffamily\raggedright,
      subsection/format += \fbox,
 }
-
 
 \title{FEM Code Report}
 \author{SA24229016 王润泽}

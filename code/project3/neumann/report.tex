@@ -1,0 +1,255 @@
+\documentclass[11pt]{ctexart}
+% \documentclass{article}
+\textheight 23.5cm \textwidth 15.8cm
+%\leftskip -1cm
+\topmargin -1.5cm \oddsidemargin 0.3cm \evensidemargin -0.3cm
+
+\usepackage{verbatim}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{
+  language=Matlab,                % 设定语言为MATLAB
+  frame=single,                   % 外围框架
+  basicstyle=\footnotesize\ttfamily,   % 基本代码风格
+  keywordstyle=\color{blue},      % 关键词风格
+  commentstyle=\color{mygreen},   % 注释风格
+  stringstyle=\color{mymauve},    % 字符串风格
+  numbers=left,                   % 行号位置
+  numberstyle=\tiny\color{mygray}, % 行号风格
+  stepnumber=1,                   % 行号步长
+  numbersep=5pt,                  % 行号与代码间隔
+  backgroundcolor=\color{white},  % 代码背景色
+  showspaces=false,               % 不显示空格
+  showstringspaces=false,         % 不显示字符串中的空格
+  showtabs=false,                 % 不显示制表符
+  tabsize=4,                      % 制表符宽度
+  captionpos=b,                   % 标题位置
+  breaklines=true,                % 自动换行
+  breakatwhitespace=false,        % 仅在空格处换行
+  escapeinside={\%*}{*)},         % 可以添加LaTeX内容
+}
+
+
+\ctexset {
+     section/format    += \sffamily\raggedright,
+     subsection/format += \fbox,
+}
+
+\title{FEM Code Report3 - Neumann}
+\author{SA24229016 王润泽}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+编写程序求解两点边值问题：
+\begin{equation}
+     \begin{aligned}
+          -u'' &= f, \quad 0 < x < 1, \\
+          u'(0) &= u'(1) = 0.
+     \end{aligned}
+\end{equation}
+选取等距网格剖分，有限元空间选取为分段连续线性多项式空间，每个单元的基函数利用单元$ I_j = [x_{j-1},x_j] $端点$x_{j-1}, x_j$得到。
+
+\section{Method}
+
+\subsection{Variational Formulation}
+
+定义线性空间：$ V\times R = H^1_{[0,1]}\times \mathbb{R} $。
+
+对于任意$ (u,c)\in V\times R , (v,d)\in V\times R $，定义双线性形式：
+\begin{equation*}
+     a((u,c),(v,d)) = \int_0^1 u'v' \,dx + c\int_0^1 v \,dx + d\int_0^1 u \,dx.
+\end{equation*}
+
+定义内积：
+\begin{equation*}
+     (f,v) = \int_0^1 f v \,dx 
+\end{equation*}
+
+那么原问题转换成变分问题为：求$ (u,c)\in V\times R $，使得对于所有$ (v,d)\in V\times R $，有：
+\begin{equation}
+     a((u,c),(v,d)) = (f,v).
+\end{equation}
+
+\subsection{FEM基函数}
+实验中采用等距网格划分，节点数为N+1， $ 0=x_0<x_1<\dots<x_{N}=1 $， 节点处的值为 $ u_i $,步长为$h_i = x_{i}-x_{i-1}$ 。选取分片线性全局基函数$ \phi_i(x) $，并选取其张成的有限维线性空间进行求解，其定义如下：
+\begin{equation}
+  \phi_i(x) = \left\{
+       \begin{aligned}
+            &\frac{x-x_{i-1}}{h_i}, \quad x \in I_{i}, \\
+            &\frac{x_i-x}{h_{i+1}}, \quad x \in I_{i+1}, \\
+            &0, \quad \text{otherwise}.
+       \end{aligned}
+  \right.
+  \quad i=1,2,\dots,N-1
+\end{equation}
+
+\begin{equation}
+  \phi_0(x) = \left\{
+       \begin{aligned}
+            & \frac{x_1-x}{h_1}, \quad x \in I_1, \\
+            & 0, \quad \text{otherwise}.
+        \end{aligned}
+      \right.,\quad 
+  \phi_N(x) = \left\{
+        \begin{aligned}
+             & \frac{x-x_{N-1}}{h_N}, \quad x \in I_N, \\
+             & 0, \quad \text{otherwise}.
+         \end{aligned}
+         \right.
+\end{equation}
+
+对于单元 $ I_i = [x_{i-1},x_i] $，其局部基函数 $ \psi $ 定义如下：
+\begin{equation}
+  \psi^0_i(x) = \left\{
+       \begin{aligned}
+            &\frac{x_i-x}{h_i}, \quad x \in I_{i}, \\
+            &0, \quad \text{otherwise}.
+       \end{aligned}
+  \right.,\quad
+  \psi^1_i(x) = \left\{
+       \begin{aligned}
+            &\frac{x-x_{i-1}}{h_i}, \quad x \in I_{i}, \\
+            &0, \quad \text{otherwise}.
+       \end{aligned}
+  \right.
+\end{equation}
+
+对于标准单元 $ I = [0,1] $，其基函数 $ {\varphi} $ 定义如下：
+\begin{equation}
+  {\varphi}^0(x) = \left\{
+       \begin{aligned}
+            &1-x, \quad x \in [0,1], \\
+            &0, \quad \text{otherwise}.
+       \end{aligned}
+  \right.,\quad
+  {\varphi}^1(x) = \left\{
+       \begin{aligned}
+            &x, \quad x \in [0,1], \\
+            &0, \quad \text{otherwise}.
+       \end{aligned}
+  \right.
+\end{equation}
+
+\subsection{刚度矩阵}
+局部刚度矩阵描述了双线性形式 $ a(u,v) $ 在局部基函数上的表现，其定义如下：
+\begin{equation}
+  \begin{aligned}
+       k_{i}^{00}&= a(\psi_i^0,\psi_i^0) = \int_{I_i} \psi_i^0(x)' \psi_i^0(x)' = \frac{1}{h_i}, \\
+       k_{i}^{01}&= k_{i}^{10}= a(\psi_i^0,\psi_i^1) = \int_{I_i} \psi_i^0(x)' \psi_i^1(x)' = -\frac{1}{h_i}, \\
+       k_{i}^{11}&= a(\psi_i^1,\psi_i^1) = \int_{I_i} \psi_i^1(x)' \psi_i^1(x)' = \frac{1}{h_i}.
+  \end{aligned}
+\end{equation}
+
+对于等分剖分的单元，其刚度矩阵 $ K_i$ 定义如下：
+\begin{equation}
+  K_i = \frac{1}{h} \begin{pmatrix}
+       1 & -1 \\
+       -1 & 1
+  \end{pmatrix}.
+\end{equation}
+
+得到全局刚度矩阵 $ A $ 为：
+\begin{equation}
+  A = \sum_{i=1}^{N+1} K_i\
+\end{equation}
+即：
+\begin{equation}
+  A =\frac{1}{h} \begin{pmatrix}
+        1& -1 & 0 & \cdots & 0 \\
+        -1 & 2& -1 & \cdots & 0 \\
+        0 & -1& 2 & \cdots & 0 \\
+        \vdots & \vdots & \vdots & \ddots & \vdots \\
+        0 & 0 & \cdots& 2  & -1\\
+        0 & 0 & \cdots&-1 & 1
+  \end{pmatrix}\in \mathbb{R}^{(N+1)\times (N+1)}
+\end{equation}
+
+另外，由二次型的定义，计算：
+\begin{equation}
+  d\int_0^1 u \,dx = d\sum_{i=0}^{N}u(x_i)\int_0^1 \phi_i(x) \,dx
+\end{equation}
+
+其中：
+\begin{equation}
+  \int_0^1 \phi_i(x) \,dx = \frac{1}{h_i}, \quad i=1,2,\dots,N-1
+\end{equation}
+
+\begin{equation}
+  \int_0^1 \phi_0(x) \,dx = \frac{1}{h_1}, \quad \int_0^1 \phi_N(x) \,dx = \frac{1}{h_N}
+\end{equation}
+
+\subsection{荷载向量}
+对于荷载向量，计算：
+\begin{equation}
+  f_i = \int_0^1 f\phi_i \,dx \approx h f(x_i), \quad i=1,2,\dots,N-1
+\end{equation}
+
+\begin{equation}
+  f_0 = \int_0^1 f\phi_0 \,dx \approx \frac{hf(x_0)}{2}, \quad 
+  f_N = \int_0^1 f\phi_N \,dx \approx \frac{hf(x_N)}{2}
+\end{equation}
+
+\subsection{数值解}
+那么变分问题：$ a((u,c),(v,d)) = (f,v) $ 可以转化为求解线性方程组：
+\begin{equation}
+  V^TKU = V^T\begin{pmatrix}
+    A_{00}&\cdots&A_{0N}& \int_0^1 \phi_0 \,dx \\
+    \vdots&\ddots&\vdots&\vdots \\
+    A_{N0}&\cdots&A_{NN}& \int_0^1 \phi_N \,dx\\
+    \int_0^1 \phi_0 \,dx&\cdots&\int_0^1 \phi_N \,dx&0
+  \end{pmatrix}U = V^TF
+\end{equation}
+对任意 $ V=(v_0,v_1,\cdots,v_{N},d)^T $ 成立。
+
+因此只需求解 $ KU = F $ ，即可得到 $ U= (u_0,u_1,\cdots,u_{N},c)^T $，为问题 (1) 的数值解。
+
+
+\section{Results}
+实验中选择 $u(x) = x^2(x-1)^2, f(x) = -12x^2+12x-2$。由于求解系数是受到下面约束限制得到的结果。
+\begin{equation}
+  \int_0^1 \hat{u} \,dx = 0
+\end{equation}
+所以在比较误差时，应当对数值解加上一个常数项，使得满足约束。即：
+\begin{equation}
+  \hat{u}_h = u_h + \int_0^1 u \,dx
+\end{equation}
+由此得到误差的定义：
+\begin{equation}
+  L^2 = \|\hat{u}_h - u\|_2
+\end{equation}
+\begin{equation}
+  H^1 = \|\hat{u}_h - u\|_2 + \|\hat{u}_h' - u'\|_2
+\end{equation}
+
+结果如下：可以看出，该方法对 $ L^2 $ 误差为 2 阶，对 $ H^1 $ 误差为一阶,与前两次实验相同。
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{|c|cc|cc|}
+ \toprule
+ N     & \multicolumn{1}{c}{$L^2$ error} & \multicolumn{1}{c|}{order} & \multicolumn{1}{c}{$H^1$ error} & \multicolumn{1}{c|}{order} \\
+    \midrule
+    10    & 3.40E-03 &       & 1.03E-01 &       \\
+    20    & 8.56E-04 & 1.991 & 5.15E-02 & 0.997 \\
+    40    & 2.14E-04 & 1.998 & 2.57E-02 & 1.002 \\
+    80    & 5.36E-05 & 1.999 & 1.28E-02 & 1.005 \\  
+    \bottomrule
+    \end{tabular}%
+    \label{tab:error}%
+\end{table}%
+\end{document}
+
