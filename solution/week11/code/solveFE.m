@@ -7,7 +7,6 @@ function u = solveFE(N, display_mesh)
   Vert = [reshape(x, 1, n_vert); reshape(y, 1, n_vert)];
   % Triangle List
   Th = zeros(6, N*N*2, 'int32');
-  siz = [2*N+1, 2*N+1];
   % Element Numbering:
   %    2j-1    2j+1
   %2i-1 lt -ct- rt
@@ -40,6 +39,7 @@ function u = solveFE(N, display_mesh)
 
   % Build Stiffness matrix and load matrix.
   K = assembleStiffness(Th, Vert, Bd);
+  % disp(det(K))
   b = assembleLoad(N, Th, Vert, Bd);
    
   % disp(K); disp(b);
